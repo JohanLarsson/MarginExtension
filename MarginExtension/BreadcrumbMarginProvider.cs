@@ -13,7 +13,7 @@ namespace MarginExtension
     /// <summary>Export a <see cref="IWpfTextViewMarginProvider"/></summary>
     [Export(typeof(IWpfTextViewMarginProvider))]
     [Name(BreadcrumbBarMargin.MarginName)]
-    [Order(Before = PredefinedMarginNames.Top)]
+    [Order(After = PredefinedMarginNames.Left)]
     [MarginContainer(PredefinedMarginNames.Top)]          
     [ContentType("F#")]            
     [TextViewRole(PredefinedTextViewRoles.Interactive)]
@@ -30,7 +30,7 @@ namespace MarginExtension
         /// </returns>
         public IWpfTextViewMargin CreateMargin(IWpfTextViewHost wpfTextViewHost, IWpfTextViewMargin marginContainer)
         {
-            return new BreadcrumbBarMargin(wpfTextViewHost.TextView);
+            return new BreadcrumbBarMargin(wpfTextViewHost.TextView, marginContainer);
         }
     }
 }

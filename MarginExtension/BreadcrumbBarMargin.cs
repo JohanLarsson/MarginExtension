@@ -1,7 +1,11 @@
 ﻿namespace MarginExtension
 {
     using System;
+    using System.Globalization;
+    using System.Linq;
     using System.Windows;
+    using System.Windows.Controls;
+    using System.Windows.Data;
     using Microsoft.VisualStudio.Text.Editor;
 
     /// <summary>Margin's canvas and visual definition including both size and content.</summary>
@@ -9,12 +13,37 @@
     {
         public const string MarginName = "BreadcrumbBarMargin";
 
+        public static readonly DependencyProperty LeftPaddingProperty = DependencyProperty.RegisterAttached(
+            "LeftPadding",
+            typeof(Thickness),
+            typeof(BreadcrumbBarMargin), 
+            new PropertyMetadata(default(Thickness)));
+
         private bool isDisposed;
 
         /// <summary>Initializes a new instance of the <see cref="BreadcrumbBarMargin"/> class for a given <paramref name="textView"/>.</summary>
         /// <param name="textView">The <see cref="IWpfTextView"/> to attach the margin to.</param>
-        public BreadcrumbBarMargin(IWpfTextView textView)
+        public BreadcrumbBarMargin(IWpfTextView textView, IWpfTextViewMargin container)
         {
+            var leftMargin = textView.VisualElement
+                .VisualAncestors()
+                .OfType<Grid>()
+                .FirstOrDefault()
+                ?.Children
+                .OfType<IWpfTextViewMargin>()
+                .FirstOrDefault(m => m.GetType().Name == "LeftMargin");
+
+            if (leftMargin != null)
+            {
+                var binding = new Binding(nameof(FrameworkElement.ActualWidth))
+                {
+                    Source = leftMargin.VisualElement,
+                    Mode = BindingMode.OneWay,
+                    Converter = new ActualWidthToLeftPaddingConverter()
+                };
+
+                BindingOperations.SetBinding(this, LeftPaddingProperty, binding);
+            }
         }
 
         /// <summary>
@@ -69,6 +98,16 @@
             }
         }
 
+        public static void SetLeftPadding(DependencyObject element, Thickness value)
+        {
+            element.SetValue(LeftPaddingProperty, value);
+        }
+
+        public static Thickness GetLeftPadding(DependencyObject element)
+        {
+            return (Thickness)element.GetValue(LeftPaddingProperty);
+        }
+
         /// <summary>
         /// Gets the <see cref="ITextViewMargin"/> with the given <paramref name="marginName"/> or null if no match is found
         /// </summary>
@@ -104,6 +143,19 @@
             if (this.isDisposed)
             {
                 throw new ObjectDisposedException(MarginName);
+            }
+        }
+
+        private class ActualWidthToLeftPaddingConverter : IValueConverter
+        {
+            public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            {
+                return new Thickness((double)value, 0, 0, 0);
+            }
+
+            public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            {
+                throw new NotImplementedException();
             }
         }
     }
